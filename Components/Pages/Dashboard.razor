@@ -1,0 +1,44 @@
+@page "/dashboard"
+@layout MainLayout
+@rendermode InteractiveServer
+@using NexusDash.Services
+@inject SupabaseAuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Dashboard - NexusDash</PageTitle>
+
+<div style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid #e2e8f0;">
+        <h1 style="font-size: 2rem; font-weight: 700; margin: 0;">Welcome to NexusDash</h1>
+        <button @onclick="SignOut" class="btn btn-primary" style="padding: 0.75rem 1.5rem;">
+            Sign Out
+        </button>
+    </div>
+</div>
+
+@code {
+    private Supabase.Gotrue.User? currentUser;
+
+    protected override void OnInitialized()
+    {
+        Console.WriteLine(" Dashboard loading...");
+        
+        currentUser = AuthService.GetCurrentUser();
+        
+        if (currentUser == null)
+        {
+            Console.WriteLine(" No user found, redirecting to sign-in");
+            Navigation.NavigateTo("/signin");
+        }
+        else
+        {
+            Console.WriteLine($" User loaded: {currentUser.Email}");
+        }
+    }
+
+    private async Task SignOut()
+    {
+        await AuthService.SignOutAsync();
+        Navigation.NavigateTo("/signin", forceLoad: true);
+    }
+}

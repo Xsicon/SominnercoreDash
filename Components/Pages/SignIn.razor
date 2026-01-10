@@ -1,0 +1,180 @@
+@page "/signin"
+@layout AuthLayout
+@rendermode InteractiveServer
+@using NexusDash.Models
+@using NexusDash.Services
+@inject SupabaseAuthService AuthService
+@inject NavigationManager Navigation
+@inject ILogger<SignIn> Logger
+
+<PageTitle>Sign In - NexusDash</PageTitle>
+
+<div class="auth-container">
+    <!-- Left Side - Visual / Branding -->
+    <div class="auth-visual">
+        <div class="auth-visual-bg"></div>
+        <div class="auth-visual-overlay"></div>
+        <div class="auth-visual-content">
+            <div class="brand-logo">
+                <div class="brand-icon">
+                    <span class="material-symbols-outlined">dashboard</span>
+                </div>
+                <span class="brand-name">NexusDash</span>
+            </div>
+            <h2 class="visual-heading">Manage projects seamlessly across teams.</h2>
+            <p class="visual-description">Collaborate, track, and deliver with the dashboard built for high-performance teams.</p>
+        </div>
+    </div>
+
+    <!-- Right Side - Login Form -->
+    <div class="auth-form-container">
+        <div class="auth-form-wrapper">
+            <!-- Logo Mobile Only -->
+            <div class="brand-logo-mobile">
+                <div class="brand-icon-mobile">
+                    <span class="material-symbols-outlined">dashboard</span>
+                </div>
+                <span class="brand-name">NexusDash</span>
+            </div>
+
+            <!-- Page Heading -->
+            <div class="auth-header">
+                <h1 class="auth-title">Welcome Back</h1>
+                <p class="auth-subtitle">Please sign in to your dashboard.</p>
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-error">
+                    <span class="material-symbols-outlined">error</span>
+                    <span>@errorMessage</span>
+                </div>
+            }
+
+            <!-- Form -->
+            <EditForm Model="@signInModel" OnValidSubmit="@HandleSignIn" class="auth-form">
+                <DataAnnotationsValidator />
+
+                <!-- Email Field -->
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <InputText @bind-Value="signInModel.Email" 
+                               class="form-input" 
+                               placeholder="name@company.com"
+                               disabled="@isLoading" />
+                    <ValidationMessage For="@(() => signInModel.Email)" class="validation-message" />
+                </div>
+
+                <!-- Password Field -->
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <div class="password-input-wrapper">
+                        <InputText @bind-Value="signInModel.Password" 
+                                   type="@(showPassword ? "text" : "password")"
+                                   class="form-input password-input" 
+                                   placeholder="Enter your password"
+                                   disabled="@isLoading" />
+                        <button type="button" 
+                                class="password-toggle" 
+                                @onclick="TogglePasswordVisibility"
+                                disabled="@isLoading">
+                            <span class="material-symbols-outlined">
+                                @(showPassword ? "visibility_off" : "visibility")
+                            </span>
+                        </button>
+                    </div>
+                    <ValidationMessage For="@(() => signInModel.Password)" class="validation-message" />
+                </div>
+
+                <!-- Forgot Password Link -->
+                <div class="form-actions">
+                    <a href="/forgot-password" class="link-primary">Forgot Password?</a>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn btn-primary" disabled="@isLoading">
+                    @if (isLoading)
+                    {
+                        <span class="loading-spinner"></span>
+                        <span>Signing In...</span>
+                    }
+                    else
+                    {
+                        <span>Sign In</span>
+                    }
+                </button>
+
+                <!-- Sign Up Link -->
+                <div class="auth-alternate">
+                    <p class="auth-alternate-text">
+                        Don't have an account? 
+                        <a href="/signup" class="link-primary">Sign Up</a>
+                    </p>
+                </div>
+            </EditForm>
+
+            <!-- Optional Role Hint -->
+            <div class="auth-footer">
+                <span class="material-symbols-outlined">lock</span>
+                <p>Secure access for Admins, PMs, Developers &amp; Clients</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private SignInModel signInModel = new();
+    private bool isLoading = false;
+    private bool showPassword = false;
+    private string? errorMessage;
+
+    private async Task HandleSignIn()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+            StateHasChanged();
+
+            if (string.IsNullOrWhiteSpace(signInModel.Email) || 
+                string.IsNullOrWhiteSpace(signInModel.Password))
+            {
+                errorMessage = "Please enter both email and password";
+                return;
+            }
+
+            Logger.LogInformation("Attempting sign in...");
+
+            var response = await AuthService.SignInAsync(
+                signInModel.Email.Trim(), 
+                signInModel.Password
+            );
+
+            if (response.Success)
+            {
+                Logger.LogInformation(" Sign in successful, navigating to dashboard");
+                Navigation.NavigateTo("/dashboard", forceLoad: true);
+            }
+            else
+            {
+                errorMessage = response.ErrorMessage ?? "Invalid email or password";
+                Logger.LogWarning(" Sign in failed");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unexpected error during sign in");
+            errorMessage = "An unexpected error occurred. Please try again.";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        showPassword = !showPassword;
+    }
+}
