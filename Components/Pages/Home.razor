@@ -2,12 +2,9 @@
 @inject NavigationManager Navigation
 
 @code {
-    protected override void OnAfterRender(bool firstRender)
+    protected override void OnInitialized()
     {
-        if (firstRender)
-        {
-            // Redirect to sign-in page after component has rendered
-            Navigation.NavigateTo("/signin", replace: true);
-        }
+        // Redirect to sign-in page
+        Navigation.NavigateTo("/signin", replace: true);
     }
 }
