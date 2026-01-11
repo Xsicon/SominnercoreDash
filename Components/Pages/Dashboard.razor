@@ -1,15 +1,15 @@
 @page "/dashboard"
 @layout MainLayout
 @rendermode InteractiveServer
-@using NexusDash.Services
+@using SominnercoreDash.Services
 @inject SupabaseAuthService AuthService
 @inject NavigationManager Navigation
 
-<PageTitle>Dashboard - NexusDash</PageTitle>
+<PageTitle>Dashboard - SominnercoreDash</PageTitle>
 
 <div style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid #e2e8f0;">
-        <h1 style="font-size: 2rem; font-weight: 700; margin: 0;">Welcome to NexusDash</h1>
+        <h1 style="font-size: 2rem; font-weight: 700; margin: 0;">Welcome to SominnercoreDash</h1>
         <button @onclick="SignOut" class="btn btn-primary" style="padding: 0.75rem 1.5rem;">
             Sign Out
         </button>

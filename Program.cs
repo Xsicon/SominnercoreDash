@@ -1,5 +1,5 @@
-using NexusDash.Components;
-using NexusDash.Services;
+using SominnercoreDash.Components;
+using SominnercoreDash.Services;
 using Supabase;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -41,6 +41,9 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
+
+// Redirect root "/" to "/signin" at HTTP level
+app.MapGet("/", () => Results.Redirect("/signin"));
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

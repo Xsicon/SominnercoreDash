@@ -1,7 +1,7 @@
 using Supabase;
 using Supabase.Gotrue;
 
-namespace NexusDash.Services;
+namespace SominnercoreDash.Services;
 
 public class SupabaseAuthService
 {
