@@ -143,7 +143,7 @@
                 return;
             }
 
-            Logger.LogInformation("Attempting sign in...");
+            Logger.LogInformation("Attempting sign in for: {Email}", signInModel.Email);
 
             var response = await AuthService.SignInAsync(
                 signInModel.Email.Trim(), 
@@ -152,19 +152,19 @@
 
             if (response.Success)
             {
-                Logger.LogInformation(" Sign in successful, navigating to dashboard");
+                Logger.LogInformation("Sign in successful, navigating to dashboard");
                 Navigation.NavigateTo("/dashboard", forceLoad: true);
             }
             else
             {
-                errorMessage = response.ErrorMessage ?? "Invalid email or password";
-                Logger.LogWarning(" Sign in failed");
+                errorMessage = response.ErrorMessage ?? "Invalid email or password. Please check your credentials and try again.";
+                Logger.LogWarning("Sign in failed: {Error}", errorMessage);
             }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Unexpected error during sign in");
-            errorMessage = "An unexpected error occurred. Please try again.";
+            errorMessage = "An unexpected error occurred. Please try again or contact support if the problem persists.";
         }
         finally
         {
