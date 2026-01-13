@@ -1,0 +1,249 @@
+@page "/confirm-email"
+@layout AuthLayout
+@rendermode InteractiveServer
+@using SominnercoreDash.Services
+@inject NavigationManager Navigation
+@inject ILogger<ConfirmEmail> Logger
+@inject IJSRuntime JS
+
+<PageTitle>Confirm Email - SominnercoreDash</PageTitle>
+
+<div class="reset-password-container">
+    <!-- Gradient Background Effects -->
+    <div class="gradient-bg">
+        <div class="gradient-orb gradient-orb-1"></div>
+        <div class="gradient-orb gradient-orb-2"></div>
+    </div>
+
+    <!-- Main Card -->
+    <div class="reset-card">
+        <!-- Header -->
+        <div class="reset-header">
+            <div class="brand-section">
+                <div class="brand-icon-reset">
+                    <span class="material-symbols-outlined">
+                        @(isConfirming ? "hourglass_empty" : confirmationSuccess ? "mark_email_read" : "error")
+                    </span>
+                </div>
+                <span class="brand-name-reset">Sominnercore</span>
+            </div>
+
+            @if (isConfirming)
+            {
+                <h1 class="reset-title">Confirming your email...</h1>
+                <p class="reset-subtitle">
+                    Please wait while we verify your email address.
+                </p>
+            }
+            else if (confirmationSuccess)
+            {
+                <h1 class="reset-title">Email confirmed!</h1>
+                <p class="reset-subtitle">
+                    Your email has been successfully verified. You can now sign in to your account.
+                </p>
+            }
+            else
+            {
+                <h1 class="reset-title">Confirmation failed</h1>
+                <p class="reset-subtitle">
+                    We couldn't verify your email address. The link may have expired or is invalid.
+                </p>
+            }
+        </div>
+
+        <div class="reset-form" style="text-align: center; padding: 2rem;">
+            @if (isConfirming)
+            {
+                <!-- Loading State -->
+                <div style="display: flex; justify-content: center; margin-bottom: 1.5rem;">
+                    <div class="loading-spinner" style="width: 3rem; height: 3rem; border-width: 3px;"></div>
+                </div>
+                <p style="color: var(--text-muted-light); font-size: 0.875rem;">
+                    Verifying your email address...
+                </p>
+            }
+            else if (confirmationSuccess)
+            {
+                <!-- Success State -->
+                <div style="display: flex; justify-content: center; margin-bottom: 1.5rem;">
+                    <div style="width: 5rem; height: 5rem; border-radius: 50%; background-color: rgba(16, 185, 129, 0.1); display: flex; align-items: center; justify-content: center;">
+                        <span class="material-symbols-outlined" style="font-size: 3rem; color: #10b981; font-variation-settings: 'FILL' 1;">check_circle</span>
+                    </div>
+                </div>
+                <p style="color: var(--text-muted-light); margin-bottom: 1.5rem; font-size: 0.875rem;">
+                    Redirecting you to sign in page in <strong>@countdown</strong> seconds...
+                </p>
+                <a href="/signin" class="btn-reset-primary" style="text-decoration: none; display: inline-flex;">
+                    Sign In Now
+                    <span class="material-symbols-outlined">arrow_forward</span>
+                </a>
+            }
+            else
+            {
+                <!-- Error State -->
+                <div style="display: flex; justify-content: center; margin-bottom: 1.5rem;">
+                    <div style="width: 5rem; height: 5rem; border-radius: 50%; background-color: rgba(239, 68, 68, 0.1); display: flex; align-items: center; justify-content: center;">
+                        <span class="material-symbols-outlined" style="font-size: 3rem; color: #ef4444;">error</span>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-error" style="text-align: left; margin-bottom: 1.5rem;">
+                        <span class="material-symbols-outlined">info</span>
+                        <span>@errorMessage</span>
+                    </div>
+                }
+
+                <p style="color: var(--text-muted-light); margin-bottom: 1.5rem; font-size: 0.875rem;">
+                    Please try signing up again or request a new verification email.
+                </p>
+                
+                <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+                    <a href="/signup" class="btn-reset-primary" style="text-decoration: none; display: inline-flex; width: auto;">
+                        Sign Up Again
+                    </a>
+                    <a href="/signin" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border: 1px solid var(--border-light); border-radius: 0.5rem; text-decoration: none; color: var(--text-light); font-weight: 500; transition: all 0.2s;">
+                        Go to Sign In
+                    </a>
+                </div>
+            }
+        </div>
+
+        <!-- Back to Login (only show if not confirming) -->
+        @if (!isConfirming)
+        {
+            <div class="reset-footer">
+                <a href="/signin" class="back-link">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                    <span>Back to Login</span>
+                </a>
+            </div>
+        }
+    </div>
+
+    <!-- Bottom Links -->
+    <div class="bottom-links">
+        <a href="/privacy" class="bottom-link">Privacy Policy</a>
+        <a href="/help" class="bottom-link">Help Center</a>
+    </div>
+</div>
+
+@code {
+    private bool isConfirming = true;
+    private bool confirmationSuccess = false;
+    private string? errorMessage;
+    private int countdown = 5;
+    private System.Threading.Timer? countdownTimer;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await ProcessEmailConfirmation();
+        }
+    }
+
+    private async Task ProcessEmailConfirmation()
+    {
+        try
+        {
+            Logger.LogInformation("Starting email confirmation process");
+
+            // Get the URL with the confirmation token
+            var url = await JS.InvokeAsync<string>("eval", "window.location.href");
+            Logger.LogInformation("Current URL: {Url}", url);
+
+            // Check if URL contains confirmation token
+            if (!url.Contains("#access_token=") && !url.Contains("?token="))
+            {
+                Logger.LogWarning("No confirmation token found in URL");
+                errorMessage = "Invalid confirmation link. The verification token is missing.";
+                isConfirming = false;
+                StateHasChanged();
+                return;
+            }
+
+            // Extract token from URL
+            string? token = null;
+            
+            // Check hash fragment first (Supabase default)
+            if (url.Contains("#access_token="))
+            {
+                var hashIndex = url.IndexOf('#');
+                if (hashIndex >= 0)
+                {
+                    var fragment = url.Substring(hashIndex + 1);
+                    var parameters = fragment.Split('&');
+                    
+                    foreach (var param in parameters)
+                    {
+                        var keyValue = param.Split('=');
+                        if (keyValue.Length == 2 && keyValue[0] == "access_token")
+                        {
+                            token = keyValue[1];
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (string.IsNullOrEmpty(token))
+            {
+                Logger.LogWarning("Could not extract token from URL");
+                errorMessage = "Invalid confirmation link format.";
+                isConfirming = false;
+                StateHasChanged();
+                return;
+            }
+
+            Logger.LogInformation("Token extracted successfully");
+
+            // Simulate confirmation (Supabase handles this automatically via the link)
+            // The email is confirmed when the user clicks the link
+            await Task.Delay(1500); // Brief delay for UX
+
+            // If we got this far, confirmation was successful
+            Logger.LogInformation("✅ Email confirmed successfully");
+            confirmationSuccess = true;
+            isConfirming = false;
+            StateHasChanged();
+
+            // Start countdown timer
+            StartCountdown();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error during email confirmation");
+            errorMessage = "An error occurred while confirming your email. Please try again.";
+            isConfirming = false;
+            StateHasChanged();
+        }
+    }
+
+    private void StartCountdown()
+    {
+        countdownTimer = new System.Threading.Timer(async _ =>
+        {
+            countdown--;
+            
+            if (countdown <= 0)
+            {
+                countdownTimer?.Dispose();
+                await InvokeAsync(() =>
+                {
+                    Navigation.NavigateTo("/signin", forceLoad: true);
+                });
+            }
+            else
+            {
+                await InvokeAsync(StateHasChanged);
+            }
+        }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+    }
+
+    public void Dispose()
+    {
+        countdownTimer?.Dispose();
+    }
+}

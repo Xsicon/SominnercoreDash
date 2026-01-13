@@ -206,6 +206,12 @@
                     </p>
                 </div>
             </EditForm>
+
+            <!-- Footer -->
+            <div class="auth-footer">
+                <span class="material-symbols-outlined">lock</span>
+                <p>Secure access for Admins, PMs, Developers &amp; Clients</p>
+            </div>
         </div>
     </div>
 </div>
@@ -264,14 +270,12 @@
             if (response.Success)
             {
                 Logger.LogInformation("Sign up successful");
-                successMessage = response.Message ?? "Account created successfully! Redirecting to dashboard...";
+                successMessage = response.Message ?? "Account created successfully! Please check your email to verify your account.";
                 StateHasChanged();
                 
-                // Wait a moment to show success message
-                await Task.Delay(2000);
-                
-                // Navigate to dashboard
-                Navigation.NavigateTo("/dashboard", forceLoad: true);
+                // Don't redirect to dashboard - user needs to verify email first
+                // Clear the form to prevent resubmission
+                signUpModel = new();
             }
             else
             {
