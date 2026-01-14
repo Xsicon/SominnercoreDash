@@ -19,13 +19,13 @@ public class SupabaseAuthService
         try
         {
             _logger.LogInformation("Attempting sign in for: {Email}", email);
-            
+
             var session = await _supabase.Auth.SignIn(email, password);
 
             if (session?.User != null)
             {
                 _logger.LogInformation("User signed in successfully: {Email}", email);
-                
+
                 return new AuthResponse
                 {
                     Success = true,
@@ -44,17 +44,16 @@ public class SupabaseAuthService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during sign in");
-            
-            // Provide user-friendly error messages based on exception type
+
             var errorMessage = ex.Message?.ToLower() switch
             {
-                var msg when msg.Contains("invalid login credentials") => 
+                var msg when msg.Contains("invalid login credentials") =>
                     "Invalid email or password. Please check your credentials and try again.",
-                var msg when msg.Contains("email not confirmed") => 
+                var msg when msg.Contains("email not confirmed") =>
                     "Please verify your email address before signing in. Check your inbox for a verification link.",
-                var msg when msg.Contains("network") || msg.Contains("connection") => 
+                var msg when msg.Contains("network") || msg.Contains("connection") =>
                     "Unable to connect to the server. Please check your internet connection and try again.",
-                var msg when msg.Contains("too many requests") => 
+                var msg when msg.Contains("too many requests") =>
                     "Too many sign-in attempts. Please wait a few minutes before trying again.",
                 _ => "An error occurred during sign in. Please try again or contact support if the problem persists."
             };
@@ -73,12 +72,9 @@ public class SupabaseAuthService
         {
             _logger.LogInformation("Attempting sign up for: {Email}", email);
 
-            // Create the user account
-            // Note: Email redirect URL should be configured in Supabase Dashboard:
-            // Authentication → Email Templates → Confirm Signup → Redirect URL
             var session = await _supabase.Auth.SignUp(email, password, new SignUpOptions
             {
-                RedirectTo = "http://localhost:3000/confirm-email",
+                RedirectTo = "https://localhost:7054/confirm-email",
                 Data = new Dictionary<string, object>
                 {
                     { "full_name", fullName },
@@ -89,7 +85,7 @@ public class SupabaseAuthService
             if (session?.User != null)
             {
                 _logger.LogInformation("User signed up successfully: {Email}", email);
-                
+
                 return new AuthResponse
                 {
                     Success = true,
@@ -109,19 +105,18 @@ public class SupabaseAuthService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during sign up");
-            
-            // Provide user-friendly error messages based on exception type
+
             var errorMessage = ex.Message?.ToLower() switch
             {
-                var msg when msg.Contains("user already registered") || msg.Contains("already exists") => 
+                var msg when msg.Contains("user already registered") || msg.Contains("already exists") =>
                     "An account with this email already exists. Please sign in or use a different email address.",
-                var msg when msg.Contains("invalid email") => 
+                var msg when msg.Contains("invalid email") =>
                     "Please enter a valid email address.",
-                var msg when msg.Contains("password") && msg.Contains("weak") => 
+                var msg when msg.Contains("password") && msg.Contains("weak") =>
                     "Password is too weak. Please use a stronger password with at least 6 characters.",
-                var msg when msg.Contains("network") || msg.Contains("connection") => 
+                var msg when msg.Contains("network") || msg.Contains("connection") =>
                     "Unable to connect to the server. Please check your internet connection and try again.",
-                var msg when msg.Contains("too many requests") => 
+                var msg when msg.Contains("too many requests") =>
                     "Too many sign-up attempts. Please wait a few minutes before trying again.",
                 _ => "An error occurred during sign up. Please try again or contact support if the problem persists."
             };
@@ -143,7 +138,7 @@ public class SupabaseAuthService
             await _supabase.Auth.ResetPasswordForEmail(email);
 
             _logger.LogInformation("Password reset email sent to: {Email}", email);
-            
+
             return new AuthResponse
             {
                 Success = true,
@@ -153,14 +148,14 @@ public class SupabaseAuthService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during password reset request");
-            
+
             var errorMessage = ex.Message?.ToLower() switch
             {
-                var msg when msg.Contains("invalid email") => 
+                var msg when msg.Contains("invalid email") =>
                     "Please enter a valid email address.",
-                var msg when msg.Contains("network") || msg.Contains("connection") => 
+                var msg when msg.Contains("network") || msg.Contains("connection") =>
                     "Unable to connect to the server. Please check your internet connection and try again.",
-                var msg when msg.Contains("too many requests") => 
+                var msg when msg.Contains("too many requests") =>
                     "Too many reset requests. Please wait a few minutes before trying again.",
                 _ => "An error occurred while requesting password reset. Please try again."
             };
@@ -173,21 +168,35 @@ public class SupabaseAuthService
         }
     }
 
-    public async Task<AuthResponse> ResetPasswordAsync(string token, string newPassword)
+    public async Task<AuthResponse> ResetPasswordAsync(string accessToken, string refreshToken, string newPassword)
     {
         try
         {
-            _logger.LogInformation("Attempting to reset password with token");
+            _logger.LogInformation("Attempting password reset");
 
-            // Supabase uses the access token from the reset link to identify the user
-            // The token should be in the URL fragment after the user clicks the reset link
+            if (string.IsNullOrEmpty(accessToken))
+            {
+                _logger.LogError("Access token is missing");
+                return new AuthResponse
+                {
+                    Success = false,
+                    ErrorMessage = "Invalid or missing reset token. Please request a new password reset link."
+                };
+            }
+
+            // Set the session with both tokens
+            await _supabase.Auth.SetSession(accessToken, refreshToken);
+            
+            _logger.LogInformation("Session established, updating password");
+
+            // Update the password
             await _supabase.Auth.Update(new Supabase.Gotrue.UserAttributes
             {
                 Password = newPassword
             });
 
-            _logger.LogInformation("Password reset successfully");
-            
+            _logger.LogInformation("Password reset successful");
+
             return new AuthResponse
             {
                 Success = true,
@@ -197,14 +206,14 @@ public class SupabaseAuthService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during password reset");
-            
+
             var errorMessage = ex.Message?.ToLower() switch
             {
-                var msg when msg.Contains("invalid") || msg.Contains("expired") => 
+                var msg when msg.Contains("invalid") || msg.Contains("expired") =>
                     "This password reset link is invalid or has expired. Please request a new one.",
-                var msg when msg.Contains("password") && msg.Contains("weak") => 
+                var msg when msg.Contains("password") && msg.Contains("weak") =>
                     "Password is too weak. Please use a stronger password.",
-                var msg when msg.Contains("network") || msg.Contains("connection") => 
+                var msg when msg.Contains("network") || msg.Contains("connection") =>
                     "Unable to connect to the server. Please check your internet connection and try again.",
                 _ => "An error occurred while resetting your password. Please try again or request a new reset link."
             };
@@ -233,7 +242,7 @@ public class SupabaseAuthService
     public User? GetCurrentUser()
     {
         var user = _supabase.Auth.CurrentUser;
-        
+
         if (user != null)
         {
             _logger.LogInformation("Current user: {Email}", user.Email);
@@ -242,7 +251,7 @@ public class SupabaseAuthService
         {
             _logger.LogWarning("No current user in session");
         }
-        
+
         return user;
     }
 

@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="supabase-csharp" Version="0.16.2" />
+    <PackageReference Include="Supabase.Gotrue" Version="6.0.3" />
   </ItemGroup>
 
 </Project>

@@ -64,17 +64,13 @@ body {
 
 /* Left Visual Side - Fixed to Viewport */
 .auth-visual {
-    position: fixed;
-    left: 0;
-    top: 0;
+    position: relative;
     display: none;
     width: 50%;
-    height: 100vh;
     flex-direction: column;
     justify-content: flex-end;
     background-color: #111a22;
     padding: 4rem;
-    overflow: hidden;
 }
 
 @media (min-width: 1024px) {
@@ -197,15 +193,11 @@ body {
 .auth-form-container {
     display: flex;
     width: 100%;
-    min-height: 100vh;
-    max-height: 100vh;
     flex-direction: column;
-    justify-content: flex-start;
+    justify-content: center;
     align-items: center;
     padding: 1.5rem;
     background-color: var(--background-light);
-    overflow-y: auto;
-    overflow-x: hidden;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -223,8 +215,6 @@ body {
 @media (min-width: 1024px) {
     .auth-form-container {
         width: 50%;
-        margin-left: 50%;
-        padding: 6rem 4rem;
     }
 }
 
@@ -234,14 +224,6 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-    margin: auto 0;
-    padding: 2rem 0;
-}
-
-@media (min-width: 1024px) {
-    .auth-form-wrapper {
-        padding: 4rem 0;
-    }
 }
 
 /* Header */

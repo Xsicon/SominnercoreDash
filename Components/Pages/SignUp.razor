@@ -71,14 +71,6 @@
                 </div>
             }
 
-            @if (!string.IsNullOrEmpty(successMessage))
-            {
-                <div class="alert alert-success">
-                    <span class="material-symbols-outlined">check_circle</span>
-                    <span>@successMessage</span>
-                </div>
-            }
-
             <!-- Form -->
             <EditForm Model="@signUpModel" OnValidSubmit="@HandleSignUp" class="auth-form">
                 <DataAnnotationsValidator />
@@ -222,7 +214,6 @@
     private bool showPassword = false;
     private bool showConfirmPassword = false;
     private string? errorMessage;
-    private string? successMessage;
 
     private async Task HandleSignUp()
     {
@@ -230,7 +221,6 @@
         {
             isLoading = true;
             errorMessage = null;
-            successMessage = null;
             StateHasChanged();
 
             // Validate all fields are filled
@@ -269,13 +259,9 @@
 
             if (response.Success)
             {
-                Logger.LogInformation("Sign up successful");
-                successMessage = response.Message ?? "Account created successfully! Please check your email to verify your account.";
-                StateHasChanged();
-                
-                // Don't redirect to dashboard - user needs to verify email first
-                // Clear the form to prevent resubmission
-                signUpModel = new();
+                Logger.LogInformation("Sign up successful, redirecting to confirm email page");
+                // Redirect to confirm email page to show "check your email" message
+                Navigation.NavigateTo("/confirm-email", forceLoad: true);
             }
             else
             {

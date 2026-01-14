@@ -8,57 +8,104 @@
 
 <PageTitle>Confirm Email - SominnercoreDash</PageTitle>
 
-<div class="reset-password-container">
+<div class="rp-container">
     <!-- Gradient Background Effects -->
-    <div class="gradient-bg">
-        <div class="gradient-orb gradient-orb-1"></div>
-        <div class="gradient-orb gradient-orb-2"></div>
+    <div class="rp-gradient-bg">
+        <div class="rp-gradient-orb rp-gradient-orb-1"></div>
+        <div class="rp-gradient-orb rp-gradient-orb-2"></div>
     </div>
 
     <!-- Main Card -->
-    <div class="reset-card">
+    <div class="rp-card">
         <!-- Header -->
-        <div class="reset-header">
-            <div class="brand-section">
-                <div class="brand-icon-reset">
+        <div class="rp-header">
+            <div class="rp-brand-section">
+                <div class="rp-brand-icon">
                     <span class="material-symbols-outlined">
-                        @(isConfirming ? "hourglass_empty" : confirmationSuccess ? "mark_email_read" : "error")
+                        @if (showInitialState)
+                        {
+                            @:mark_email_unread
+                        }
+                        else if (isConfirming)
+                        {
+                            @:hourglass_empty
+                        }
+                        else if (confirmationSuccess)
+                        {
+                            @:mark_email_read
+                        }
+                        else
+                        {
+                            @:error
+                        }
                     </span>
                 </div>
-                <span class="brand-name-reset">Sominnercore</span>
+                <span class="rp-brand-name">Sominnercore</span>
             </div>
 
-            @if (isConfirming)
+            @if (showInitialState)
             {
-                <h1 class="reset-title">Confirming your email...</h1>
-                <p class="reset-subtitle">
+                <h1 class="rp-title">Check your email</h1>
+                <p class="rp-subtitle">
+                    We've sent a verification link to your email address. Please check your inbox and click the link to verify your account.
+                </p>
+            }
+            else if (isConfirming)
+            {
+                <h1 class="rp-title">Confirming your email...</h1>
+                <p class="rp-subtitle">
                     Please wait while we verify your email address.
                 </p>
             }
             else if (confirmationSuccess)
             {
-                <h1 class="reset-title">Email confirmed!</h1>
-                <p class="reset-subtitle">
+                <h1 class="rp-title">Email confirmed!</h1>
+                <p class="rp-subtitle">
                     Your email has been successfully verified. You can now sign in to your account.
                 </p>
             }
             else
             {
-                <h1 class="reset-title">Confirmation failed</h1>
-                <p class="reset-subtitle">
+                <h1 class="rp-title">Confirmation failed</h1>
+                <p class="rp-subtitle">
                     We couldn't verify your email address. The link may have expired or is invalid.
                 </p>
             }
         </div>
 
-        <div class="reset-form" style="text-align: center; padding: 2rem;">
-            @if (isConfirming)
+        <div class="rp-form" style="text-align: center; padding: 2rem;">
+            @if (showInitialState)
+            {
+                <!-- Initial State - Check Your Email -->
+                <div style="display: flex; justify-content: center; margin-bottom: 1.5rem;">
+                    <div style="width: 5rem; height: 5rem; border-radius: 50%; background-color: rgba(19, 127, 236, 0.1); display: flex; align-items: center; justify-content: center;">
+                        <span class="material-symbols-outlined" style="font-size: 3rem; color: #137fec; font-variation-settings: 'FILL' 1;">mail</span>
+                    </div>
+                </div>
+                <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--rp-text-light);">Verification email sent!</h3>
+                <p style="color: var(--rp-text-muted-light); margin-bottom: 1.5rem; font-size: 0.875rem; line-height: 1.6;">
+                    We've sent a verification link to your email address. Please check your inbox (and spam folder) and click the link to activate your account.
+                </p>
+                
+                <div style="padding: 1rem; background-color: rgba(19, 127, 236, 0.05); border-radius: 0.5rem; border: 1px solid rgba(19, 127, 236, 0.1); margin-bottom: 1.5rem;">
+                    <p style="font-size: 0.8125rem; color: var(--rp-text-muted-light); line-height: 1.5;">
+                        <span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: middle; margin-right: 0.25rem;">info</span>
+                        Didn't receive the email? Check your spam folder or contact support if you need assistance.
+                    </p>
+                </div>
+
+                <a href="/signin" class="rp-btn-secondary" style="text-decoration: none;">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                    <span>Back to Sign In</span>
+                </a>
+            }
+            else if (isConfirming)
             {
                 <!-- Loading State -->
                 <div style="display: flex; justify-content: center; margin-bottom: 1.5rem;">
-                    <div class="loading-spinner" style="width: 3rem; height: 3rem; border-width: 3px;"></div>
+                    <div class="rp-loading-spinner" style="width: 3rem; height: 3rem; border-width: 3px;"></div>
                 </div>
-                <p style="color: var(--text-muted-light); font-size: 0.875rem;">
+                <p style="color: var(--rp-text-muted-light); font-size: 0.875rem;">
                     Verifying your email address...
                 </p>
             }
@@ -70,10 +117,10 @@
                         <span class="material-symbols-outlined" style="font-size: 3rem; color: #10b981; font-variation-settings: 'FILL' 1;">check_circle</span>
                     </div>
                 </div>
-                <p style="color: var(--text-muted-light); margin-bottom: 1.5rem; font-size: 0.875rem;">
+                <p style="color: var(--rp-text-muted-light); margin-bottom: 1.5rem; font-size: 0.875rem;">
                     Redirecting you to sign in page in <strong>@countdown</strong> seconds...
                 </p>
-                <a href="/signin" class="btn-reset-primary" style="text-decoration: none; display: inline-flex;">
+                <a href="/signin" class="rp-btn-primary" style="text-decoration: none; display: inline-flex;">
                     Sign In Now
                     <span class="material-symbols-outlined">arrow_forward</span>
                 </a>
@@ -89,32 +136,32 @@
 
                 @if (!string.IsNullOrEmpty(errorMessage))
                 {
-                    <div class="alert alert-error" style="text-align: left; margin-bottom: 1.5rem;">
+                    <div class="rp-alert rp-alert-error" style="text-align: left; margin-bottom: 1.5rem;">
                         <span class="material-symbols-outlined">info</span>
                         <span>@errorMessage</span>
                     </div>
                 }
 
-                <p style="color: var(--text-muted-light); margin-bottom: 1.5rem; font-size: 0.875rem;">
+                <p style="color: var(--rp-text-muted-light); margin-bottom: 1.5rem; font-size: 0.875rem;">
                     Please try signing up again or request a new verification email.
                 </p>
                 
                 <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
-                    <a href="/signup" class="btn-reset-primary" style="text-decoration: none; display: inline-flex; width: auto;">
+                    <a href="/signup" class="rp-btn-primary" style="text-decoration: none; display: inline-flex; width: auto;">
                         Sign Up Again
                     </a>
-                    <a href="/signin" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border: 1px solid var(--border-light); border-radius: 0.5rem; text-decoration: none; color: var(--text-light); font-weight: 500; transition: all 0.2s;">
+                    <a href="/signin" class="rp-btn-secondary">
                         Go to Sign In
                     </a>
                 </div>
             }
         </div>
 
-        <!-- Back to Login (only show if not confirming) -->
-        @if (!isConfirming)
+        <!-- Back to Login (only show if not confirming and not initial state) -->
+        @if (!isConfirming && !showInitialState)
         {
-            <div class="reset-footer">
-                <a href="/signin" class="back-link">
+            <div class="rp-footer">
+                <a href="/signin" class="rp-back-link">
                     <span class="material-symbols-outlined">arrow_back</span>
                     <span>Back to Login</span>
                 </a>
@@ -123,14 +170,15 @@
     </div>
 
     <!-- Bottom Links -->
-    <div class="bottom-links">
-        <a href="/privacy" class="bottom-link">Privacy Policy</a>
-        <a href="/help" class="bottom-link">Help Center</a>
+    <div class="rp-bottom-links">
+        <a href="/privacy" class="rp-bottom-link">Privacy Policy</a>
+        <a href="/help" class="rp-bottom-link">Help Center</a>
     </div>
 </div>
 
 @code {
-    private bool isConfirming = true;
+    private bool showInitialState = false;
+    private bool isConfirming = false;
     private bool confirmationSuccess = false;
     private string? errorMessage;
     private int countdown = 5;
@@ -140,29 +188,49 @@
     {
         if (firstRender)
         {
-            await ProcessEmailConfirmation();
+            await CheckConfirmationState();
         }
     }
 
-    private async Task ProcessEmailConfirmation()
+    private async Task CheckConfirmationState()
     {
         try
         {
-            Logger.LogInformation("Starting email confirmation process");
-
-            // Get the URL with the confirmation token
+            // Get the URL to check if there's a token
             var url = await JS.InvokeAsync<string>("eval", "window.location.href");
             Logger.LogInformation("Current URL: {Url}", url);
 
             // Check if URL contains confirmation token
-            if (!url.Contains("#access_token=") && !url.Contains("?token="))
+            if (url.Contains("#access_token=") || url.Contains("?token="))
             {
-                Logger.LogWarning("No confirmation token found in URL");
-                errorMessage = "Invalid confirmation link. The verification token is missing.";
-                isConfirming = false;
-                StateHasChanged();
-                return;
+                // User came from email link - process confirmation
+                Logger.LogInformation("Token found in URL, processing email confirmation");
+                await ProcessEmailConfirmation(url);
             }
+            else
+            {
+                // User just signed up - show initial "check your email" state
+                Logger.LogInformation("No token found, showing initial check email state");
+                showInitialState = true;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error checking confirmation state");
+            errorMessage = "An error occurred. Please try again.";
+            StateHasChanged();
+        }
+    }
+
+    private async Task ProcessEmailConfirmation(string url)
+    {
+        try
+        {
+            isConfirming = true;
+            StateHasChanged();
+
+            Logger.LogInformation("Starting email confirmation process");
 
             // Extract token from URL
             string? token = null;
