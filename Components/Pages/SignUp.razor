@@ -105,11 +105,13 @@
                 <div class="form-group">
                     <label class="form-label">Password</label>
                     <div class="password-input-wrapper">
-                        <InputText @bind-Value="signUpModel.Password" 
-                                   type="@(showPassword ? "text" : "password")"
-                                   class="form-input password-input" 
-                                   placeholder="Create a strong password"
-                                   disabled="@isLoading" />
+                        <input @bind="signUpModel.Password"
+                               @oninput="@((e) => { signUpModel.Password = e.Value?.ToString() ?? string.Empty; CalculatePasswordStrength(signUpModel.Password); })"
+                               type="@(showPassword ? "text" : "password")"
+                               class="form-input password-input" 
+                               placeholder="Create a strong password"
+                               autocomplete="new-password"
+                               disabled="@isLoading" />
                         <button type="button" 
                                 class="password-toggle" 
                                 @onclick="TogglePasswordVisibility"
@@ -122,6 +124,46 @@
                     <ValidationMessage For="@(() => signUpModel.Password)" class="validation-message" />
                 </div>
 
+                <!-- Password Strength Indicator -->
+                <div class="rp-strength-section" style="margin-top: 0.5rem; margin-bottom: 1rem;">
+                    <div class="rp-strength-header">
+                        <span class="rp-strength-label">STRENGTH</span>
+                        <span class="rp-strength-value rp-@GetStrengthColorClass()">@passwordStrength.Label</span>
+                    </div>
+                    <div class="rp-strength-bars">
+                        @for (int i = 0; i < 4; i++)
+                        {
+                            <div class="rp-strength-bar @(i < passwordStrength.Score ? "rp-bar-active" : "rp-bar-inactive") rp-@GetStrengthColorClass()"></div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Password Requirements -->
+                <div class="rp-requirements-box" style="margin-bottom: 1.5rem;">
+                    <p class="rp-requirements-title">MUST CONTAIN:</p>
+                    <div class="rp-requirement-item">
+                        <span class="material-symbols-outlined rp-requirement-icon @(passwordStrength.HasMinLength ? "rp-met" : "rp-unmet")" 
+                              style="@(passwordStrength.HasMinLength ? "font-variation-settings: 'FILL' 1;" : "")">
+                            @(passwordStrength.HasMinLength ? "check_circle" : "radio_button_unchecked")
+                        </span>
+                        <p class="rp-requirement-text @(passwordStrength.HasMinLength ? "rp-text-met" : "")">At least 8 characters</p>
+                    </div>
+                    <div class="rp-requirement-item">
+                        <span class="material-symbols-outlined rp-requirement-icon @(passwordStrength.HasNumber ? "rp-met" : "rp-unmet")"
+                              style="@(passwordStrength.HasNumber ? "font-variation-settings: 'FILL' 1;" : "")">
+                            @(passwordStrength.HasNumber ? "check_circle" : "radio_button_unchecked")
+                        </span>
+                        <p class="rp-requirement-text @(passwordStrength.HasNumber ? "rp-text-met" : "")">At least one number</p>
+                    </div>
+                    <div class="rp-requirement-item">
+                        <span class="material-symbols-outlined rp-requirement-icon @(passwordStrength.HasSpecialChar ? "rp-met" : "rp-unmet")"
+                              style="@(passwordStrength.HasSpecialChar ? "font-variation-settings: 'FILL' 1;" : "")">
+                            @(passwordStrength.HasSpecialChar ? "check_circle" : "radio_button_unchecked")
+                        </span>
+                        <p class="rp-requirement-text @(passwordStrength.HasSpecialChar ? "rp-text-met" : "")">At least one special symbol</p>
+                    </div>
+                </div>
+
                 <!-- Confirm Password Field -->
                 <div class="form-group">
                     <label class="form-label">Confirm Password</label>
@@ -130,6 +172,7 @@
                                    type="@(showConfirmPassword ? "text" : "password")"
                                    class="form-input password-input" 
                                    placeholder="Re-enter your password"
+                                   autocomplete="new-password"
                                    disabled="@isLoading" />
                         <button type="button" 
                                 class="password-toggle" 
@@ -210,10 +253,60 @@
 
 @code {
     private SignUpModel signUpModel = new();
+    private PasswordStrength passwordStrength = new();
     private bool isLoading = false;
     private bool showPassword = false;
     private bool showConfirmPassword = false;
     private string? errorMessage;
+
+    protected override void OnInitialized()
+    {
+        // Initialize password strength with empty password
+        CalculatePasswordStrength(string.Empty);
+    }
+
+    private void CalculatePasswordStrength(string password)
+    {
+        if (string.IsNullOrEmpty(password))
+        {
+            passwordStrength = new PasswordStrength();
+            return;
+        }
+
+        passwordStrength.HasMinLength = password.Length >= 8;
+        passwordStrength.HasNumber = password.Any(char.IsDigit);
+        passwordStrength.HasSpecialChar = password.Any(c => !char.IsLetterOrDigit(c));
+        passwordStrength.HasUpperCase = password.Any(char.IsUpper);
+        passwordStrength.HasLowerCase = password.Any(char.IsLower);
+
+        int score = 0;
+        if (passwordStrength.HasMinLength) score++;
+        if (passwordStrength.HasNumber) score++;
+        if (passwordStrength.HasSpecialChar) score++;
+        if (passwordStrength.HasUpperCase && passwordStrength.HasLowerCase) score++;
+
+        passwordStrength.Score = score;
+        passwordStrength.Label = score switch
+        {
+            0 or 1 => "Weak",
+            2 => "Fair",
+            3 => "Medium",
+            4 => "Strong",
+            _ => "Weak"
+        };
+    }
+
+    private string GetStrengthColorClass()
+    {
+        return passwordStrength.Score switch
+        {
+            0 or 1 => "weak",
+            2 => "fair",
+            3 => "medium",
+            4 => "strong",
+            _ => "weak"
+        };
+    }
 
     private async Task HandleSignUp()
     {
@@ -231,6 +324,13 @@
                 string.IsNullOrWhiteSpace(signUpModel.AccountType))
             {
                 errorMessage = "Please fill in all required fields";
+                return;
+            }
+
+            // Validate password strength
+            if (passwordStrength.Score < 3)
+            {
+                errorMessage = "Please choose a stronger password. Your password should meet all the requirements shown above.";
                 return;
             }
 
