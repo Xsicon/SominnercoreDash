@@ -88,13 +88,14 @@ body {
     display: flex;
     width: 100%;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
-    padding: 1.5rem;
+    padding: 2rem 1.5rem;
     background-color: var(--background-light);
     margin-left: 0;
     overflow-y: auto;
     min-height: 100vh;
+    -webkit-overflow-scrolling: touch;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -106,6 +107,7 @@ body {
 @media (min-width: 640px) {
     .auth-form-container {
         padding: 3rem;
+        justify-content: center;
     }
 }
 
@@ -117,7 +119,8 @@ body {
         right: 0;
         top: 0;
         bottom: 0;
-        height: 100vh; 
+        height: 100vh;
+        justify-content: center;
     }
 }
 
@@ -128,6 +131,12 @@ body {
     flex-direction: column;
     gap: 1.5rem;
     padding: 1rem 0;
+}
+
+@media (min-width: 640px) {
+    .auth-form-wrapper {
+        padding-top: 8rem;
+    }
 }
 
 .auth-visual-bg {
@@ -216,7 +225,8 @@ body {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem; /* Increased from 1rem to 1.5rem */
+    margin-top: 0.5rem; /* Added top margin */
 }
 
 @media (min-width: 1024px) {
@@ -240,48 +250,12 @@ body {
     font-size: 1.25rem;
 }
 
-/* Form Container - Scrollable */
-.auth-form-container {
-    display: flex;
-    width: 100%;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 1.5rem;
-    background-color: var(--background-light);
-}
-
-@media (prefers-color-scheme: dark) {
-    .auth-form-container {
-        background-color: var(--background-dark);
-    }
-}
-
-@media (min-width: 640px) {
-    .auth-form-container {
-        padding: 3rem;
-    }
-}
-
-@media (min-width: 1024px) {
-    .auth-form-container {
-        width: 50%;
-    }
-}
-
-.auth-form-wrapper {
-    width: 100%;
-    max-width: 30rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-/* Header */
+/* Header*/
 .auth-header {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    margin-bottom: 0.5rem; /* Added margin bottom */
 }
 
 .auth-title {
