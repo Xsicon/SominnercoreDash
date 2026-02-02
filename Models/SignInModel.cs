@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace NexusDash.Models;
+namespace SominnercoreDash.Models;
 
 public class SignInModel
 {

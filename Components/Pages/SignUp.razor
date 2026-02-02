@@ -1,0 +1,393 @@
+@page "/signup"
+@layout AuthLayout
+@rendermode InteractiveServer
+@using SominnercoreDash.Models
+@using SominnercoreDash.Services
+@inject SupabaseAuthService AuthService
+@inject NavigationManager Navigation
+@inject ILogger<SignUp> Logger
+
+<PageTitle>Sign Up - SominnercoreDash</PageTitle>
+
+<div class="auth-container">
+    <!-- Left Side - Visual / Branding -->
+    <div class="auth-visual">
+        <div class="auth-visual-bg"></div>
+        <div class="auth-visual-overlay"></div>
+        
+        <!-- Brand Logo - Top Left -->
+        <div class="brand-logo-top">
+            <div class="brand-icon">
+                <span class="material-symbols-outlined">dashboard</span>
+            </div>
+            <span class="brand-name">Sominnercore</span>
+        </div>
+        
+        <!-- Content - Bottom -->
+        <div class="auth-visual-content">
+            <h2 class="visual-heading">Empower your workflow with a unified core.</h2>
+            <p class="visual-description">Sominnercore is the central intelligence for your business operations. It integrates project lifecycle management, resource allocation, and real-time analytics into a single, cohesive dashboard designed to drive efficiency across every department.</p>
+            
+            <!-- Feature List -->
+            <div style="margin-top: 2rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="material-symbols-outlined" style="color: #137fec; font-size: 1.25rem;">check_circle</span>
+                    <span style="color: #92adc9;">Centralized Operational Command</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="material-symbols-outlined" style="color: #137fec; font-size: 1.25rem;">check_circle</span>
+                    <span style="color: #92adc9;">Multi-Role Access Control</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="material-symbols-outlined" style="color: #137fec; font-size: 1.25rem;">check_circle</span>
+                    <span style="color: #92adc9;">End-to-End Project Visibility</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Side - Sign Up Form -->
+    <div class="auth-form-container">
+        <div class="auth-form-wrapper">
+            <!-- Logo Mobile Only -->
+            <div class="brand-logo-mobile">
+                <div class="brand-icon-mobile">
+                    <span class="material-symbols-outlined">dashboard</span>
+                </div>
+                <span class="brand-name">Sominnercore</span>
+            </div>
+
+            <!-- Page Heading -->
+            <div class="auth-header">
+                <h1 class="auth-title">Create your account</h1>
+                <p class="auth-subtitle">Join your team and start collaborating effectively.</p>
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-error">
+                    <span class="material-symbols-outlined">error</span>
+                    <span>@errorMessage</span>
+                </div>
+            }
+
+            <!-- Form -->
+            <EditForm Model="@signUpModel" OnValidSubmit="@HandleSignUp" class="auth-form">
+                <DataAnnotationsValidator />
+
+                <!-- Full Name Field -->
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <div class="input-with-icon">
+                        <span class="material-symbols-outlined input-icon">person</span>
+                        <InputText @bind-Value="signUpModel.FullName" 
+                                   class="form-input input-with-icon-field" 
+                                   placeholder="Enter your full name"
+                                   disabled="@isLoading" />
+                    </div>
+                    <ValidationMessage For="@(() => signUpModel.FullName)" class="validation-message" />
+                </div>
+
+                <!-- Email Field -->
+                <div class="form-group">
+                    <label class="form-label">Work Email</label>
+                    <div class="input-with-icon">
+                        <span class="material-symbols-outlined input-icon">mail</span>
+                        <InputText @bind-Value="signUpModel.Email" 
+                                   class="form-input input-with-icon-field" 
+                                   placeholder="name@company.com"
+                                   disabled="@isLoading" />
+                    </div>
+                    <ValidationMessage For="@(() => signUpModel.Email)" class="validation-message" />
+                </div>
+
+                <!-- Password Field -->
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <div class="password-input-wrapper">
+                        <input @bind="signUpModel.Password"
+                               @oninput="@((e) => { signUpModel.Password = e.Value?.ToString() ?? string.Empty; CalculatePasswordStrength(signUpModel.Password); })"
+                               type="@(showPassword ? "text" : "password")"
+                               class="form-input password-input" 
+                               placeholder="Create a strong password"
+                               autocomplete="new-password"
+                               disabled="@isLoading" />
+                        <button type="button" 
+                                class="password-toggle" 
+                                @onclick="TogglePasswordVisibility"
+                                disabled="@isLoading">
+                            <span class="material-symbols-outlined">
+                                @(showPassword ? "visibility_off" : "visibility")
+                            </span>
+                        </button>
+                    </div>
+                    <ValidationMessage For="@(() => signUpModel.Password)" class="validation-message" />
+                </div>
+
+                <!-- Password Strength Indicator -->
+                <div class="rp-strength-section" style="margin-top: 0.5rem; margin-bottom: 1rem;">
+                    <div class="rp-strength-header">
+                        <span class="rp-strength-label">STRENGTH</span>
+                        <span class="rp-strength-value rp-@GetStrengthColorClass()">@passwordStrength.Label</span>
+                    </div>
+                    <div class="rp-strength-bars">
+                        @for (int i = 0; i < 4; i++)
+                        {
+                            <div class="rp-strength-bar @(i < passwordStrength.Score ? "rp-bar-active" : "rp-bar-inactive") rp-@GetStrengthColorClass()"></div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Password Requirements -->
+                <div class="rp-requirements-box" style="margin-bottom: 1.5rem;">
+                    <p class="rp-requirements-title">MUST CONTAIN:</p>
+                    <div class="rp-requirement-item">
+                        <span class="material-symbols-outlined rp-requirement-icon @(passwordStrength.HasMinLength ? "rp-met" : "rp-unmet")" 
+                              style="@(passwordStrength.HasMinLength ? "font-variation-settings: 'FILL' 1;" : "")">
+                            @(passwordStrength.HasMinLength ? "check_circle" : "radio_button_unchecked")
+                        </span>
+                        <p class="rp-requirement-text @(passwordStrength.HasMinLength ? "rp-text-met" : "")">At least 8 characters</p>
+                    </div>
+                    <div class="rp-requirement-item">
+                        <span class="material-symbols-outlined rp-requirement-icon @(passwordStrength.HasNumber ? "rp-met" : "rp-unmet")"
+                              style="@(passwordStrength.HasNumber ? "font-variation-settings: 'FILL' 1;" : "")">
+                            @(passwordStrength.HasNumber ? "check_circle" : "radio_button_unchecked")
+                        </span>
+                        <p class="rp-requirement-text @(passwordStrength.HasNumber ? "rp-text-met" : "")">At least one number</p>
+                    </div>
+                    <div class="rp-requirement-item">
+                        <span class="material-symbols-outlined rp-requirement-icon @(passwordStrength.HasSpecialChar ? "rp-met" : "rp-unmet")"
+                              style="@(passwordStrength.HasSpecialChar ? "font-variation-settings: 'FILL' 1;" : "")">
+                            @(passwordStrength.HasSpecialChar ? "check_circle" : "radio_button_unchecked")
+                        </span>
+                        <p class="rp-requirement-text @(passwordStrength.HasSpecialChar ? "rp-text-met" : "")">At least one special symbol</p>
+                    </div>
+                </div>
+
+                <!-- Confirm Password Field -->
+                <div class="form-group">
+                    <label class="form-label">Confirm Password</label>
+                    <div class="password-input-wrapper">
+                        <InputText @bind-Value="signUpModel.ConfirmPassword" 
+                                   type="@(showConfirmPassword ? "text" : "password")"
+                                   class="form-input password-input" 
+                                   placeholder="Re-enter your password"
+                                   autocomplete="new-password"
+                                   disabled="@isLoading" />
+                        <button type="button" 
+                                class="password-toggle" 
+                                @onclick="ToggleConfirmPasswordVisibility"
+                                disabled="@isLoading">
+                            <span class="material-symbols-outlined">
+                                @(showConfirmPassword ? "visibility_off" : "visibility")
+                            </span>
+                        </button>
+                    </div>
+                    <ValidationMessage For="@(() => signUpModel.ConfirmPassword)" class="validation-message" />
+                </div>
+
+                <!-- Account Type Dropdown -->
+                <div class="form-group">
+                    <label class="form-label">Select Account Type</label>
+                    <div class="select-wrapper">
+                        <InputSelect @bind-Value="signUpModel.AccountType" 
+                                     class="form-input form-select"
+                                     disabled="@isLoading">
+                            <option value="">Select a role...</option>
+                            <option value="Admin">Admin</option>
+                            <option value="PM">Project Manager</option>
+                            <option value="Developer">Developer</option>
+                            <option value="Client">Client</option>
+                        </InputSelect>
+                        <span class="material-symbols-outlined select-icon">expand_more</span>
+                    </div>
+                    <ValidationMessage For="@(() => signUpModel.AccountType)" class="validation-message" />
+                </div>
+
+                <!-- Terms Agreement -->
+                <div class="form-group">
+                    <div class="checkbox-wrapper">
+                        <InputCheckbox @bind-Value="signUpModel.AgreeToTerms" 
+                                       class="form-checkbox"
+                                       disabled="@isLoading" />
+                        <label class="checkbox-label">
+                            I agree to the 
+                            <a href="/terms" class="link-primary" target="_blank">Terms of Service</a> 
+                            and 
+                            <a href="/privacy" class="link-primary" target="_blank">Privacy Policy</a>
+                        </label>
+                    </div>
+                    <ValidationMessage For="@(() => signUpModel.AgreeToTerms)" class="validation-message" />
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn btn-primary" disabled="@isLoading">
+                    @if (isLoading)
+                    {
+                        <span class="loading-spinner"></span>
+                        <span>Creating Account...</span>
+                    }
+                    else
+                    {
+                        <span>Sign Up</span>
+                    }
+                </button>
+
+                <!-- Sign In Link -->
+                <div class="auth-alternate">
+                    <p class="auth-alternate-text">
+                        Already have an account? 
+                        <a href="/signin" class="link-primary">Login</a>
+                    </p>
+                </div>
+            </EditForm>
+
+            <!-- Footer -->
+            <div class="auth-footer">
+                <span class="material-symbols-outlined">lock</span>
+                <p>Secure access for Admins, PMs, Developers &amp; Clients</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private SignUpModel signUpModel = new();
+    private PasswordStrength passwordStrength = new();
+    private bool isLoading = false;
+    private bool showPassword = false;
+    private bool showConfirmPassword = false;
+    private string? errorMessage;
+
+    protected override void OnInitialized()
+    {
+        // Initialize password strength with empty password
+        CalculatePasswordStrength(string.Empty);
+    }
+
+    private void CalculatePasswordStrength(string password)
+    {
+        if (string.IsNullOrEmpty(password))
+        {
+            passwordStrength = new PasswordStrength();
+            return;
+        }
+
+        passwordStrength.HasMinLength = password.Length >= 8;
+        passwordStrength.HasNumber = password.Any(char.IsDigit);
+        passwordStrength.HasSpecialChar = password.Any(c => !char.IsLetterOrDigit(c));
+        passwordStrength.HasUpperCase = password.Any(char.IsUpper);
+        passwordStrength.HasLowerCase = password.Any(char.IsLower);
+
+        int score = 0;
+        if (passwordStrength.HasMinLength) score++;
+        if (passwordStrength.HasNumber) score++;
+        if (passwordStrength.HasSpecialChar) score++;
+        if (passwordStrength.HasUpperCase && passwordStrength.HasLowerCase) score++;
+
+        passwordStrength.Score = score;
+        passwordStrength.Label = score switch
+        {
+            0 or 1 => "Weak",
+            2 => "Fair",
+            3 => "Medium",
+            4 => "Strong",
+            _ => "Weak"
+        };
+    }
+
+    private string GetStrengthColorClass()
+    {
+        return passwordStrength.Score switch
+        {
+            0 or 1 => "weak",
+            2 => "fair",
+            3 => "medium",
+            4 => "strong",
+            _ => "weak"
+        };
+    }
+
+    private async Task HandleSignUp()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+            StateHasChanged();
+
+            // Validate all fields are filled
+            if (string.IsNullOrWhiteSpace(signUpModel.FullName) || 
+                string.IsNullOrWhiteSpace(signUpModel.Email) ||
+                string.IsNullOrWhiteSpace(signUpModel.Password) ||
+                string.IsNullOrWhiteSpace(signUpModel.ConfirmPassword) ||
+                string.IsNullOrWhiteSpace(signUpModel.AccountType))
+            {
+                errorMessage = "Please fill in all required fields";
+                return;
+            }
+
+            // Validate password strength
+            if (passwordStrength.Score < 3)
+            {
+                errorMessage = "Please choose a stronger password. Your password should meet all the requirements shown above.";
+                return;
+            }
+
+            // Validate password match
+            if (signUpModel.Password != signUpModel.ConfirmPassword)
+            {
+                errorMessage = "Passwords do not match. Please try again.";
+                return;
+            }
+
+            // Validate terms agreement
+            if (!signUpModel.AgreeToTerms)
+            {
+                errorMessage = "You must agree to the Terms of Service and Privacy Policy to continue";
+                return;
+            }
+
+            Logger.LogInformation("Attempting sign up for: {Email}", signUpModel.Email);
+
+            var response = await AuthService.SignUpAsync(
+                signUpModel.Email.Trim(),
+                signUpModel.Password,
+                signUpModel.FullName.Trim(),
+                signUpModel.AccountType
+            );
+
+            if (response.Success)
+            {
+                Logger.LogInformation("Sign up successful, redirecting to confirm email page");
+                // Redirect to confirm email page to show "check your email" message
+                Navigation.NavigateTo("/confirm-email", forceLoad: true);
+            }
+            else
+            {
+                errorMessage = response.ErrorMessage ?? "Failed to create account. Please try again.";
+                Logger.LogWarning("Sign up failed: {Error}", errorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unexpected error during sign up");
+            errorMessage = "An unexpected error occurred. Please try again or contact support if the problem persists.";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        showPassword = !showPassword;
+    }
+
+    private void ToggleConfirmPasswordVisibility()
+    {
+        showConfirmPassword = !showConfirmPassword;
+    }
+}

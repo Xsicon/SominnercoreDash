@@ -1,13 +1,13 @@
 @page "/signin"
 @layout AuthLayout
 @rendermode InteractiveServer
-@using NexusDash.Models
-@using NexusDash.Services
+@using SominnercoreDash.Models
+@using SominnercoreDash.Services
 @inject SupabaseAuthService AuthService
 @inject NavigationManager Navigation
 @inject ILogger<SignIn> Logger
 
-<PageTitle>Sign In - NexusDash</PageTitle>
+<PageTitle>Sign In - SominnercoreDash</PageTitle>
 
 <div class="auth-container">
     <!-- Left Side - Visual / Branding -->
@@ -19,10 +19,10 @@
                 <div class="brand-icon">
                     <span class="material-symbols-outlined">dashboard</span>
                 </div>
-                <span class="brand-name">NexusDash</span>
+                <span class="brand-name">Sominnercore</span>
             </div>
             <h2 class="visual-heading">Manage projects seamlessly across teams.</h2>
-            <p class="visual-description">Collaborate, track, and deliver with the dashboard built for high-performance teams.</p>
+            <p class="visual-description">Collaborate, track, and deliver with Sominnercore, the dashboard built for high-performance teams.</p>
         </div>
     </div>
 
@@ -34,13 +34,13 @@
                 <div class="brand-icon-mobile">
                     <span class="material-symbols-outlined">dashboard</span>
                 </div>
-                <span class="brand-name">NexusDash</span>
+                <span class="brand-name">Sominnercore</span>
             </div>
 
             <!-- Page Heading -->
             <div class="auth-header">
                 <h1 class="auth-title">Welcome Back</h1>
-                <p class="auth-subtitle">Please sign in to your dashboard.</p>
+                <p class="auth-subtitle">Please sign in to your Sominnercore dashboard.</p>
             </div>
 
             @if (!string.IsNullOrEmpty(errorMessage))
@@ -143,7 +143,7 @@
                 return;
             }
 
-            Logger.LogInformation("Attempting sign in...");
+            Logger.LogInformation("Attempting sign in for: {Email}", signInModel.Email);
 
             var response = await AuthService.SignInAsync(
                 signInModel.Email.Trim(), 
@@ -152,19 +152,19 @@
 
             if (response.Success)
             {
-                Logger.LogInformation(" Sign in successful, navigating to dashboard");
+                Logger.LogInformation("Sign in successful, navigating to dashboard");
                 Navigation.NavigateTo("/dashboard", forceLoad: true);
             }
             else
             {
-                errorMessage = response.ErrorMessage ?? "Invalid email or password";
-                Logger.LogWarning(" Sign in failed");
+                errorMessage = response.ErrorMessage ?? "Invalid email or password. Please check your credentials and try again.";
+                Logger.LogWarning("Sign in failed: {Error}", errorMessage);
             }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Unexpected error during sign in");
-            errorMessage = "An unexpected error occurred. Please try again.";
+            errorMessage = "An unexpected error occurred. Please try again or contact support if the problem persists.";
         }
         finally
         {

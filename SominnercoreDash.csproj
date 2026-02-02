@@ -4,11 +4,12 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>NexusDash</RootNamespace>
+    <RootNamespace>SominnercoreDash</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="supabase-csharp" Version="0.16.2" />
+    <PackageReference Include="Supabase.Gotrue" Version="6.0.3" />
   </ItemGroup>
 
 </Project>
